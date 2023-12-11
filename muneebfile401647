@@ -1,0 +1,102 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+
+const int GRID_SIZE = 3;
+const int PUZZLE_SIZE = GRID_SIZE * GRID_SIZE;
+
+struct PuzzleState {
+    int puzzle[PUZZLE_SIZE];
+    int h;
+
+    bool operator>(const PuzzleState& other) const {
+        return h > other.h;
+    }
+};
+
+int calcHeuristic(const int* puzzle) {
+    int h = 0;
+    for (int i = 0; i < PUZZLE_SIZE; ++i) {
+        if (puzzle[i] != i) {
+            int row_diff = abs(i / GRID_SIZE - puzzle[i] / GRID_SIZE);
+            int col_diff = abs(i % GRID_SIZE - puzzle[i] % GRID_SIZE);
+            h += row_diff + col_diff;
+        }
+    }
+    return h;
+}
+
+bool isGoal(const int* puzzle) {
+    for (int i = 0; i < PUZZLE_SIZE; ++i) {
+        if (puzzle[i] != i) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+
+void solve(const int* initialGrid) {
+    priority_queue<PuzzleState, vector<PuzzleState>, greater<PuzzleState>> pq;
+    map<vector<int>, bool> visited;
+
+    PuzzleState initial;
+    for (int i = 0; i < PUZZLE_SIZE; ++i) {
+        initial.puzzle[i] = initialGrid[i];
+    }
+    initial.h = calcHeuristic(initialGrid);
+
+    pq.push(initial);
+
+    while (!pq.empty()) {
+        PuzzleState current = pq.top();
+        pq.pop();
+      
+
+        if (isGoal(current.puzzle)) {
+            cout << "Goal State Reached!" << endl;
+
+            return;
+        }
+
+        visited[vector<int>(current.puzzle, current.puzzle + PUZZLE_SIZE)] = true;
+
+        int blankIndex;
+        for (blankIndex = 0; blankIndex < PUZZLE_SIZE; ++blankIndex) {
+            if (current.puzzle[blankIndex] == 0) {
+                break;
+            }
+        }
+
+        const int moves[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+
+        for (int i = 0; i < 4; ++i) {
+            int newBlankRow = blankIndex / GRID_SIZE + moves[i][0];
+            int newBlankCol = blankIndex % GRID_SIZE + moves[i][1];
+
+            if (newBlankRow >= 0 && newBlankRow < GRID_SIZE && newBlankCol >= 0 && newBlankCol < GRID_SIZE) {
+                int newIndex = newBlankRow * GRID_SIZE + newBlankCol;
+
+                PuzzleState nextState;
+                copy(current.puzzle, current.puzzle + PUZZLE_SIZE, nextState.puzzle);
+                swap(nextState.puzzle[blankIndex], nextState.puzzle[newIndex]);
+                nextState.h = calcHeuristic(nextState.puzzle);
+
+                if (!visited[vector<int>(nextState.puzzle, nextState.puzzle + PUZZLE_SIZE)]) {
+                    pq.push(nextState);
+                }
+            }
+        }
+    }
+
+    cout << "Goal state not reachable!" << endl;
+}
+
+int main() {
+    int initialGrid[PUZZLE_SIZE] = {8, 0, 6, 5, 4, 7, 2, 3, 1};
+ 
+    solve(initialGrid);
+
+    return 0;
+}
